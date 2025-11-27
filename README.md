@@ -41,6 +41,10 @@ overrides:
 
 ## Solution
 
+There are two ways to resolve this issue:
+
+### Option 1: Add User-Agent to API CORS Configuration
+
 Add `User-Agent` to `allowHeaders` in the API's CORS configuration.
 
 ```typescript
@@ -56,6 +60,20 @@ app.use(
     credentials: true,
   }),
 )
+```
+
+### Option 2: Disable Default User-Agent on Client
+
+Disable the default User-Agent header in the better-auth client configuration.
+
+```typescript
+// Example: Client configuration (from apps/web/src/lib/auth.ts)
+import { createAuthClient } from 'better-auth/react'
+
+export const authClient = createAuthClient({
+  baseURL: 'http://localhost:3000',
+  disableDefaultFetchPlugins: true,  // Disables default User-Agent header
+})
 ```
 
 ## Repository Structure
@@ -114,6 +132,10 @@ overrides:
 
 ## 解決方法
 
+この問題を解決する方法は2つあります：
+
+### 方法1: API側のCORS設定にUser-Agentを追加
+
 API側のCORS設定で`allowHeaders`に`User-Agent`を追加します。
 
 ```typescript
@@ -129,6 +151,20 @@ app.use(
     credentials: true,
   }),
 )
+```
+
+### 方法2: クライアント側でデフォルトのUser-Agentを無効化
+
+better-authクライアントの設定でデフォルトのUser-Agentヘッダーを無効化します。
+
+```typescript
+// 例: クライアント設定 (apps/web/src/lib/auth.ts より)
+import { createAuthClient } from 'better-auth/react'
+
+export const authClient = createAuthClient({
+  baseURL: 'http://localhost:3000',
+  disableDefaultFetchPlugins: true,  // デフォルトのUser-Agentヘッダーを無効化
+})
 ```
 
 ## リポジトリ構成
