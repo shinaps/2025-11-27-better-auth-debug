@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "better-auth-debug",
   "private": true,
   "scripts": {
     "build": "turbo run build",
