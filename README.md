@@ -27,9 +27,9 @@ In this repository, you can reproduce the issue by changing the better-auth vers
 
 ```yaml
 # pnpm-workspace.yaml
-overrides:
-  better-auth: "1.3.34"  # Works fine
-  # better-auth: "1.4.3"  # Error in Safari
+catalog:
+  better-auth: 1.3.34  # Works fine
+  # better-auth: 1.4.3  # Error in Safari
 ```
 
 ### Steps
@@ -118,9 +118,9 @@ better-auth v1.4.0から、リクエストのデフォルト`User-Agent`ヘッ�
 
 ```yaml
 # pnpm-workspace.yaml
-overrides:
-  better-auth: "1.3.34"  # 問題なし
-  # better-auth: "1.4.3"  # Safariでエラー
+catalog:
+  better-auth: 1.3.34  # 問題なし
+  # better-auth: 1.4.3  # Safariでエラー
 ```
 
 ### 手順
