@@ -1,135 +1,143 @@
-# Turborepo starter
+# better-auth CORS Issue Investigation Repository
 
-This Turborepo starter is maintained by the Turborepo core team.
+This repository is for investigating and reproducing CORS issues that occur with better-auth v1.4.0 and later.
 
-## Using this example
+## Problem Overview
 
-Run the following command:
+Starting from better-auth v1.4.0, the default `User-Agent` header now includes the string `'better-auth'` in requests.
 
-```sh
-npx create-turbo@latest
+This change causes CORS errors **at least in Safari browser** when the API's CORS `allowedHeaders` configuration does not explicitly include `user-agent`.
+
+### Browser Behavior
+
+- **Chrome**: Works fine ✅
+- **Safari**: CORS error occurs ❌
+
+## Problem Details
+
+### Conditions for the Issue
+
+1. better-auth version is **1.4.0 or higher**
+2. API CORS configuration does **not include** `user-agent` in `allowedHeaders`
+3. Accessing from **Safari** browser
+
+## How to Reproduce
+
+In this repository, you can reproduce the issue by changing the better-auth version in `pnpm-workspace.yaml`.
+
+```yaml
+# pnpm-workspace.yaml
+overrides:
+  better-auth: "1.3.34"  # Works fine
+  # better-auth: "1.4.3"  # Error in Safari
 ```
 
-## What's inside?
+### Steps
 
-This Turborepo includes the following packages/apps:
+1. Change the better-auth version in `pnpm-workspace.yaml`
+2. Run `pnpm install` to update dependencies
+3. Start the application
+4. Access from Safari browser to verify the behavior
 
-### Apps and Packages
+## Solution
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+Add `User-Agent` to `allowHeaders` in the API's CORS configuration.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+```typescript
+// Example: Hono (from apps/api/src/index.ts)
+app.use(
+  '/api/auth/*',
+  cors({
+    origin: 'http://localhost:5173',
+    allowHeaders: ['Content-Type', 'Authorization', 'User-Agent'],  // Add User-Agent
+    allowMethods: ['POST', 'GET', 'OPTIONS'],
+    exposeHeaders: ['Content-Length'],
+    maxAge: 600,
+    credentials: true,
+  }),
+)
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+## Repository Structure
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+- `apps/api/`: Backend API
+- `apps/web/`: Frontend application
+- `pnpm-workspace.yaml`: better-auth version management
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+## References
 
-### Develop
+- [better-auth GitHub](https://github.com/better-auth/better-auth)
+- [CORS Specification](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
 
-To develop all apps and packages, run the following command:
+---
 
-```
-cd my-turborepo
+# better-auth CORS問題 調査用リポジトリ
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+このリポジトリは、better-auth v1.4.0以降で発生するCORS問題の調査・再現用リポジトリです。
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
+## 問題の概要
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+better-auth v1.4.0から、リクエストのデフォルト`User-Agent`ヘッダーに`'better-auth'`という文字列が含まれるようになりました。
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+この変更により、API側でCORSの`allowedHeaders`に`user-agent`を明示的に指定していない場合、**少なくともSafariブラウザで**CORSエラーが発生することが確認されています。
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+### ブラウザごとの挙動
 
-### Remote Caching
+- **Chrome**: 問題なし ✅
+- **Safari**: CORSエラーが発生 ❌
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+## 問題の詳細
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+### 発生条件
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+1. better-authのバージョンが**1.4.0以上**
+2. API側のCORS設定で`allowedHeaders`に`user-agent`が**含まれていない**
+3. **Safari**ブラウザでアクセス
 
-```
-cd my-turborepo
+## 再現方法
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
+このリポジトリでは、`pnpm-workspace.yaml`のbetter-authバージョンを変更することで問題を再現できます。
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+```yaml
+# pnpm-workspace.yaml
+overrides:
+  better-auth: "1.3.34"  # 問題なし
+  # better-auth: "1.4.3"  # Safariでエラー
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+### 手順
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+1. `pnpm-workspace.yaml`のbetter-authバージョンを変更
+2. `pnpm install`で依存関係を更新
+3. アプリケーションを起動
+4. Safariブラウザでアクセスして動作確認
 
+## 解決方法
+
+API側のCORS設定で`allowHeaders`に`User-Agent`を追加します。
+
+```typescript
+// 例: Hono (apps/api/src/index.ts より)
+app.use(
+  '/api/auth/*',
+  cors({
+    origin: 'http://localhost:5173',
+    allowHeaders: ['Content-Type', 'Authorization', 'User-Agent'],  // User-Agentを追加
+    allowMethods: ['POST', 'GET', 'OPTIONS'],
+    exposeHeaders: ['Content-Length'],
+    maxAge: 600,
+    credentials: true,
+  }),
+)
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
+## リポジトリ構成
 
-## Useful Links
+- `apps/api/`: バックエンドAPI
+- `apps/web/`: フロントエンドアプリケーション
+- `pnpm-workspace.yaml`: better-authバージョン管理用
 
-Learn more about the power of Turborepo:
+## 参考リンク
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+- [better-auth GitHub](https://github.com/better-auth/better-auth)
+- [CORS仕様](https://developer.mozilla.org/ja/docs/Web/HTTP/CORS)
